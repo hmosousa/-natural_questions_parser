@@ -1,15 +1,17 @@
-import re
 import json
+import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from tqdm import tqdm
 from datasets import load_dataset
 
 DATASET_NAME = "natural_questions"
 SPLITS = ["train", "validation"]
 
 DATA_PATH = Path(__file__).parent / "data"
+
+logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
@@ -68,7 +70,9 @@ class Entry:
 
         self.candidates = [
             Candidate(top_level, s_byte, e_byte)
-            for e_byte, _, s_byte, _, top_level in zip(*self.long_answer_candidates.values())
+            for e_byte, _, s_byte, _, top_level in zip(
+                *self.long_answer_candidates.values()
+            )
         ]
 
     def _build_document(self):
@@ -76,7 +80,7 @@ class Entry:
         chars = [" "] * n_chars
         for tkn in self.tokens:
             if not tkn.is_html:
-                chars[tkn.offset.start: tkn.offset.end] = tkn.text
+                chars[tkn.offset.start : tkn.offset.end] = tkn.text
         document = "".join(chars).strip()
         document = re.sub(r" +", r" ", document)
         return document
@@ -100,23 +104,24 @@ class Entry:
             "candidates": candidates,
             "long_answer": candidates[l_answer_id],
             "short_answers": short_answers,
-            "yes_no_answer": self.annotations["yes_no_answer"]
+            "yes_no_answer": self.annotations["yes_no_answer"],
         }
         return result
 
 
 def main():
-    nq = load_dataset(DATASET_NAME)
     for split in SPLITS:
-        data = nq[split]
+        data = load_dataset(DATASET_NAME, split=split, streaming=True)
 
         split_path = DATA_PATH / split
         split_path.mkdir(exist_ok=True, parents=True)
 
-        for entry in tqdm(data):
-            result = Entry(**entry).format()
-            opath = split_path / f"{result['id']}.json"
-            json.dump(result, opath.open("w"), indent=4)
+        for idx, entry in enumerate(data):
+            opath = split_path / f"{idx}.json"
+            if not opath.exists():
+                logging.info(f"Processing entry {idx}.")
+                result = Entry(**entry).format()
+                json.dump(result, opath.open("w"), indent=4)
 
 
 if __name__ == "__main__":
