@@ -1,5 +1,7 @@
 # Natural Questions Parser
 
+[<img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="drawing" width="30"/>](https://huggingface.co/datasets/hugosousa/natural_questions_parsed)
+
 ## Overview
 
 This repository contains a script designed to parse the [Natural Questions](https://huggingface.co/datasets/natural_questions) dataset. The Natural Questions dataset comprises entries annotated with start and end byte offsets for each answer. Our script, `main.py`, performs two primary functions:
